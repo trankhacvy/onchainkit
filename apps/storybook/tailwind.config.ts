@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import sharedConfig from "@acme/ui/tailwind.config";
+import sharedConfig from "@onchainkit/ui/tailwind.config";
 
 const config = {
   ...sharedConfig,

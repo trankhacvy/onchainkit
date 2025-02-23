@@ -1,5 +1,5 @@
 import type { Preview } from "@storybook/react";
-import "@acme/ui/globals.css";
+import "@onchainkit/ui/globals.css";
 
 const preview: Preview = {
   parameters: {
