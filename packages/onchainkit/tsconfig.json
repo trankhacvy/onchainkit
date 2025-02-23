@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@acme/ui/*": ["./src/*"]
+      "@acme/ui/*": ["./src/*"],
+      "react": ["./node_modules/@types/react"]
     }
   },
   "include": ["."],
