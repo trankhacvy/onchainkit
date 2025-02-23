@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@acme/ui/*": ["./src/*"]
+      "@onchainkit/ui/*": ["./src/*"]
     }
   },
   "include": ["."],
