@@ -1,11 +1,9 @@
-export interface WalletAdapter {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  isConnected: boolean;
-  publicKey: string | null;
-}
+import type { WalletContextState } from '@solana/wallet-adapter-react';
+import { WalletName } from '@solana/wallet-adapter-base';
 
-export interface ConnectWalletOptions {
+export type WalletAdapter = WalletContextState;
+
+interface ConnectWalletOptions {
   onSuccess?: (publicKey: string) => void;
   onError?: (error: Error) => void;
 }
@@ -15,12 +13,25 @@ export async function connectWallet(
   options?: ConnectWalletOptions
 ) {
   try {
-    await wallet.connect();
-    
-    if (wallet.publicKey && options?.onSuccess) {
-      options.onSuccess(wallet.publicKey);
+    if (!wallet.connected) {
+      if (!wallet.connect) {
+        throw new Error("Please install Phantom wallet");
+      }
+
+      if (!wallet.wallet) {
+        // Show modal through wallet.select()
+        wallet.select('phantom' as WalletName);
+        return;
+      }
+      
+      await wallet.connect();
+      
+      if (wallet.publicKey && options?.onSuccess) {
+        options.onSuccess(wallet.publicKey.toString());
+      }
     }
   } catch (error) {
+    console.error("Error connecting wallet:", error);
     if (options?.onError) {
       options.onError(error as Error);
     }
@@ -29,11 +40,14 @@ export async function connectWallet(
 
 export async function disconnectWallet(
   wallet: WalletAdapter,
-  options?: ConnectWalletOptions
+  options?: Pick<ConnectWalletOptions, 'onError'>
 ) {
   try {
-    await wallet.disconnect();
+    if (wallet.connected) {
+      await wallet.disconnect();
+    }
   } catch (error) {
+    console.error("Error disconnecting wallet:", error);
     if (options?.onError) {
       options.onError(error as Error);
     }

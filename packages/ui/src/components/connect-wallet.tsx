@@ -1,21 +1,19 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@onchainkit/ui/lib/utils";
-import { WalletAdapter, connectWallet, disconnectWallet } from "../utils/connect-wallet";
+import { cn } from "../lib/utils";
+import type { ComponentPropsWithoutRef } from "react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
@@ -33,44 +31,42 @@ const buttonVariants = cva(
   }
 );
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-}
-
-export interface ConnectWalletProps extends Omit<ButtonProps, 'onError'> {
-  wallet: WalletAdapter;
+interface ConnectWalletProps extends Omit<ComponentPropsWithoutRef<"button">, "onError"> {
+  variant?: VariantProps<typeof buttonVariants>["variant"];
+  size?: VariantProps<typeof buttonVariants>["size"];
   onSuccess?: (publicKey: string) => void;
   onError?: (error: Error) => void;
+  connectingText?: string;
+  connectedText?: string;
+  disconnectedText?: string;
 }
 
-const ConnectWallet = React.forwardRef<HTMLButtonElement, ConnectWalletProps>(
-  ({ className, variant, size, asChild = false, wallet, onSuccess, onError, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    
-    const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (wallet.isConnected) {
-        await disconnectWallet(wallet, { onError });
-      } else {
-        await connectWallet(wallet, { onSuccess, onError });
-      }
-      
-      props.onClick?.(e);
-    };
+export default function ConnectWallet({ 
+  className, 
+  variant, 
+  size, 
+  onSuccess, 
+  onError, 
+  connectingText, 
+  connectedText, 
+  disconnectedText, 
+  ...props 
+}: ConnectWalletProps) {
+  const wallet = useWallet();
 
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        onClick={handleClick}
-        {...props}
-      >
-        {wallet.isConnected ? "Disconnect" : "Connect Wallet"}
-      </Comp>
-    );
-  }
-);
-ConnectWallet.displayName = "Connect-Wallet";
+  React.useEffect(() => {
+    if (wallet.connected && wallet.publicKey) {
+      onSuccess?.(wallet.publicKey.toString());
+    }
+  }, [wallet.connected, wallet.publicKey, onSuccess]);
 
-export { ConnectWallet, buttonVariants };
+  return (
+    <WalletMultiButton 
+      className={cn(buttonVariants({ variant, size }), className)}
+      onClick={props.onClick}
+      disabled={props.disabled}
+    />
+  );
+}
+
+ConnectWallet.displayName = "ConnectWallet";
